@@ -1,0 +1,4 @@
+# Зависимости и сборка
+node_modules
+dist
+.DS_Store
