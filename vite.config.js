@@ -60,8 +60,28 @@ function stripProvenanceSidecars() {
   };
 }
 
+/* Адрес сайта от корня домена. На GitHub Pages сайт живёт в подпапке
+   (/karelia-guest-house-website/), локально и на своём домене — в корне.
+   Картинки, шрифты и стили Vite переписывает сам; ссылки между страницами
+   (href="/…") дописываем здесь. */
+const base = process.env.SITE_BASE || '/';
+function prefixPageLinks() {
+  return {
+    name: 'prefix-page-links',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        if (base === '/') return html;
+        return html.replace(/href="\/(?!\/)/g, (m, off) =>
+          html.startsWith(base, off + 6) ? m : `href="${base}`);
+      },
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [partials(), stripProvenanceSidecars()],
+  base,
+  plugins: [partials(), prefixPageLinks(), stripProvenanceSidecars()],
   server: { port: 5188, host: '127.0.0.1' },
   build: {
     assetsInlineLimit: 2048,
