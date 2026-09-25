@@ -1,4 +1,5 @@
-/* Общее поведение всех страниц: мобильное меню, просмотр фотографий, нижняя панель связи. */
+/* Общее поведение всех страниц: мобильное меню, просмотр фотографий, нижняя панель связи,
+   движение при прокрутке. */
 
 /* --- меню ------------------------------------------------------------ */
 const burger = document.querySelector('.burger');
@@ -108,6 +109,55 @@ if (dock && 'IntersectionObserver' in window) {
   });
   [hero, ...ends].filter(Boolean).forEach((el) => io.observe(el));
   dock.inert = true;
+}
+
+/* --- движение при прокрутке ------------------------------------------
+   Параллакс первого экрана и появление блоков. Тем, кто просит меньше
+   движения, всё показано сразу и неподвижно. */
+const calmMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const heroSection = document.querySelector('.hero');
+if (heroSection && !calmMotion) {
+  const layers = [...heroSection.querySelectorAll('.hero__bg, .hero__video')];
+  const inner = heroSection.querySelector('.hero__in');
+  let queued = false;
+  const paint = () => {
+    queued = false;
+    const h = heroSection.offsetHeight;
+    const y = Math.min(Math.max(window.scrollY, 0), h);
+    const p = y / h;
+    // Фон уходит медленнее страницы и чуть приближается; текст отстаёт меньше и растворяется.
+    layers.forEach((el) => { el.style.transform = `translate3d(0, ${y * .42}px, 0) scale(${1 + p * .06})`; });
+    if (inner) {
+      inner.style.transform = `translate3d(0, ${y * .2}px, 0)`;
+      inner.style.opacity = String(Math.max(0, 1 - p * 1.1));
+    }
+  };
+  const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(paint); } };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  paint();
+}
+
+if (!calmMotion && 'IntersectionObserver' in window) {
+  const up = [...document.querySelectorAll('.pill, .head, .revs__text, .card, .rev, .nature__text, .near, .extras, .spot, .region__more, .stay__col, .stay__note, .where .titled, .where__lead, .dist div, .go, .where .map, .cta__text, .cta .chan')];
+  const photos = [...document.querySelectorAll('.card__ph, .nature__grid figure, .land__grid figure, .spot')];
+  const all = [...up, ...photos];
+  up.forEach((el) => el.classList.add('rv'));
+  photos.forEach((el) => el.classList.add('rvi'));
+  // Уже прокрученное выше экрана (переход по якорю, возврат назад) не прячем.
+  all.forEach((el) => { if (el.getBoundingClientRect().bottom < 0) el.classList.add('is-in'); });
+  document.documentElement.classList.add('rv-on');
+
+  const io = new IntersectionObserver((entries) => {
+    // Одновременно вошедшие блоки проявляются по очереди.
+    entries.filter((e) => e.isIntersecting).forEach((e, k) => {
+      e.target.style.setProperty('--d', `${Math.min(k, 5) * 90}ms`);
+      e.target.classList.add('is-in');
+      io.unobserve(e.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: .12 });
+  all.forEach((el) => { if (!el.classList.contains('is-in')) io.observe(el); });
 }
 
 /* --- ВРЕМЕННО: переключатель фона первого экрана ---------------------
