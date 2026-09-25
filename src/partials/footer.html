@@ -35,7 +35,12 @@
 <!--#include dock-->
 
 <dialog class="lb" id="lb" aria-label="Просмотр фотографии">
-  <img class="lb__img" alt="">
+  <figure class="lb__fig">
+    <img class="lb__img" alt="">
+    <figcaption class="lb__cap"><span class="lb__txt"></span><span class="lb__count" aria-live="polite"></span></figcaption>
+  </figure>
+  <button class="lb__nav lb__prev" type="button" aria-label="Предыдущее фото">‹</button>
+  <button class="lb__nav lb__next" type="button" aria-label="Следующее фото">›</button>
   <button class="lb__close" type="button" aria-label="Закрыть">×</button>
 </dialog>
 

@@ -245,6 +245,19 @@ img { max-width: 100%; height: auto; display: block; }
 .hero__pin { display: flex; flex: none; }
 .hero__pin svg { width: 40px; height: 40px; margin: -2px -4px; fill: none; stroke: currentColor; stroke-width: .95; }
 
+/* ВРЕМЕННО: переключатель фона первого экрана (см. src/site.js). */
+.bgswitch {
+  position: absolute; left: 50%; bottom: 1rem; z-index: 2; transform: translateX(-50%);
+  display: flex; gap: .25rem; padding: .25rem; border-radius: 100px;
+  background: rgba(20,26,18,.6); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.bgswitch button {
+  border: 0; border-radius: 100px; padding: .45rem .95rem; cursor: pointer;
+  font: 400 13px/1 var(--f-b); color: #fff; background: transparent;
+}
+.bgswitch button[aria-pressed="true"] { background: var(--ivory); color: var(--ink); }
+@media (max-width: 720px) { .bgswitch { bottom: auto; top: 5.6rem; } }
+
 /* --- четыре опоры ------------------------------------------------------ */
 .pillars { background: var(--ivory-2); }
 .pillars__in {
@@ -356,6 +369,17 @@ img { max-width: 100%; height: auto; display: block; }
 
 /* --- условия («Перед поездкой») ------------------------------------------- */
 .stay { padding: var(--band) 0; background: var(--ivory-2); }
+/* На странице дома условия идут сразу за галереей, на том же фоне. */
+.obj + .stay { padding-top: 0; background: var(--ivory); }
+/* Страница дома: отзывы → условия → дорога. Условия и дорога — одной полосой. */
+.revs--house + .stay { background: var(--ivory); padding-bottom: clamp(2rem, 3.4vw, 3rem); }
+.road { padding: 0 0 var(--band); background: var(--ivory); }
+.road__in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(1.6rem, 3vw, 3rem); align-items: start;
+  border-top: 1px solid var(--line); padding-top: clamp(2rem, 3.4vw, 3rem); }
+.road .dist { max-width: none; }
+.revs--house .revs__text .rating { margin-top: 1.4rem; }
+@media (max-width: 900px) { .road__in { grid-template-columns: 1fr; } }
+.revs--house .revs__grid:has(> :nth-child(2):last-child) { grid-template-columns: repeat(2, 1fr); }
 .stay__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
 .stay__col { background: var(--white); border-radius: calc(var(--r) + 4px); padding: 1.4rem 1.5rem 1.5rem; }
 .stay__h { margin: 0 0 1rem; font-family: var(--f-h); font-weight: 400; font-size: 1.3rem; }
@@ -450,14 +474,30 @@ img { max-width: 100%; height: auto; display: block; }
 /* короткий герой с фото объекта */
 .phero { position: relative; min-height: clamp(420px, 62vh, 620px); display: flex; isolation: isolate; color: #fff; }
 .phero__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+/* Кадрирование фото по объектам. */
+.gal__grid img[src*="house3-stove"] { object-position: 12% 50%; }
+body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
+/* На телефоне шапка ложится на белые стены — сверху затемнение плотнее. */
+@media (max-width: 720px) {
+  .phero__veil { background: linear-gradient(180deg, rgba(20,26,18,.72) 0%, rgba(20,26,18,.3) 30%, rgba(20,26,18,.2) 50%, rgba(20,26,18,.78) 100%); }
+}
 .phero__veil {
   position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(180deg, rgba(20,26,18,.6) 0%, rgba(20,26,18,.12) 38%, rgba(20,26,18,.72) 100%);
 }
 .phero__in { align-self: flex-end; padding: 7rem 0 2.6rem; }
-.crumbs { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .9rem; padding: 0; list-style: none; font-size: 14px; opacity: .88; }
+/* Крошки лежат поверх фото — своя тёмная подложка держит контраст на светлых стенах. */
+.crumbs {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: .1rem .35rem;
+  margin: 0 0 1rem; padding: .15rem .8rem; list-style: none;
+  font-size: 14px; color: #fff; line-height: 1.2;
+  background: rgba(20,26,18,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  border-radius: 100px;
+}
+.crumbs li { display: flex; align-items: center; }
 .crumbs li + li::before { content: "/"; margin-right: .35rem; opacity: .6; }
-.crumbs a { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.4); }
+.crumbs a { display: inline-flex; align-items: center; min-height: 28px; color: #fff; text-decoration: underline; text-decoration-color: rgba(255,255,255,.45); text-underline-offset: 3px; }
+.crumbs a:hover { text-decoration-color: #fff; }
 .phero__h { margin: 0; font-family: var(--f-h); font-weight: 400; font-size: clamp(2.3rem, 5vw, 4.2rem); line-height: 1.04; letter-spacing: -.015em; }
 .phero__p { margin: 1rem 0 0; max-width: 38rem; font-size: clamp(1rem, 1.25vw, 1.12rem); opacity: .94; }
 
@@ -476,6 +516,14 @@ img { max-width: 100%; height: auto; display: block; }
 .obj__lead { margin: 0 0 1.2rem; font-size: clamp(1.08rem, 1.4vw, 1.22rem); line-height: 1.55; }
 .obj__text p { max-width: 40rem; }
 .obj__h3 { margin: 2rem 0 .9rem; font-family: var(--f-h); font-weight: 400; font-size: 1.45rem; }
+/* Галерея живёт в левой колонке под описанием, а карточка цены справа
+   остаётся на экране, пока гость смотрит фото. */
+.obj__grid { grid-template-areas: "text aside" "gal aside"; }
+.obj__text { grid-area: text; }
+.obj .aside { grid-area: aside; }
+.gal__grid.obj__gal { grid-area: gal; margin-top: clamp(1.6rem, 3vw, 2.4rem);
+  grid-template-columns: repeat(2, 1fr); grid-auto-rows: clamp(140px, 13vw, 190px); }
+.gal__grid.obj__gal a:first-child { grid-column: span 2; grid-row: span 2; }
 
 .ticks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: .55rem 1.6rem; }
 .ticks li { position: relative; padding-left: 1.7rem; font-size: 15.5px; line-height: 1.45; }
@@ -492,6 +540,8 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .aside__rate { margin: 0; font-size: 15px; color: var(--muted); }
 .aside__rate b { font-family: var(--f-h); font-weight: 400; font-size: 2.1rem; color: var(--ink); }
+.aside__rate span { white-space: nowrap; }
+@media (max-width: 720px) { .aside__rate b { font-size: clamp(1.35rem, 7vw, 1.8rem); } }
 .aside__note { margin: .5rem 0 1.2rem; font-size: 14px; color: var(--muted); }
 .aside .chan { grid-template-columns: 1fr; }
 .aside__hint { margin: 1rem 0 0; font-size: 13.5px; color: var(--muted); }
@@ -506,6 +556,17 @@ img { max-width: 100%; height: auto; display: block; }
 .gal__grid--four a:nth-child(4) { grid-column: 2 / 4; }
 .gal__grid img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s cubic-bezier(.16,1,.3,1); }
 .gal__grid a:hover img { transform: scale(1.03); }
+/* Значок увеличения: фото открываются крупно — видно и на телефоне, где нет наведения. */
+.gal__grid a, .flat__gal a { position: relative; }
+.gal__grid a::after, .flat__gal a::after {
+  content: ""; position: absolute; right: .6rem; bottom: .6rem; width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(247,244,236,.92) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231e231a' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='5.5'/%3E%3Cpath d='M15 15l4.5 4.5M10.5 8v5M8 10.5h5'/%3E%3C/svg%3E") center / 18px no-repeat;
+  box-shadow: 0 2px 8px rgba(20,26,18,.25); pointer-events: none;
+}
+.gal__cap {
+  position: absolute; left: .6rem; bottom: .6rem; padding: .3rem .7rem; border-radius: 100px;
+  background: rgba(247,244,236,.92); color: var(--ink); font-size: 13px; line-height: 1.2;
+}
 
 /* другие объекты */
 .others { padding: var(--band) 0; background: var(--ivory-2); }
@@ -514,7 +575,20 @@ img { max-width: 100%; height: auto; display: block; }
 /* просмотр фото */
 .lb { padding: 0; border: 0; background: transparent; max-width: min(94vw, 1400px); max-height: 92vh; overflow: visible; }
 .lb::backdrop { background: rgba(14,18,12,.88); }
-.lb__img { display: block; max-width: min(94vw, 1400px); max-height: 88vh; width: auto; height: auto; border-radius: 10px; }
+.lb__fig { margin: 0; }
+.lb__img { display: block; max-width: min(94vw, 1400px); max-height: 82vh; width: auto; height: auto; border-radius: 10px; }
+.lb__cap { display: flex; justify-content: space-between; gap: 1rem; margin-top: .7rem; font-size: 14.5px; color: rgba(255,255,255,.88); }
+.lb__count { flex: none; font-variant-numeric: tabular-nums; opacity: .8; }
+.lb__nav {
+  position: fixed; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%;
+  border: 0; background: rgba(247,244,236,.92); color: var(--ink); font: 400 30px/1 var(--f-h); cursor: pointer;
+  display: grid; place-items: center; padding-bottom: 4px;
+}
+.lb__nav[hidden] { display: none; }
+.lb__prev { left: max(.8rem, env(safe-area-inset-left)); }
+.lb__next { right: max(.8rem, env(safe-area-inset-right)); }
+.lb__nav:hover { background: #fff; }
+.lb :focus-visible { outline-color: var(--ivory); }
 .lb__close {
   position: absolute; top: -.6rem; right: -.6rem; width: 42px; height: 42px; border-radius: 50%;
   border: 0; background: var(--ivory); color: var(--ink); font-size: 26px; line-height: 1; cursor: pointer;
@@ -623,6 +697,8 @@ img { max-width: 100%; height: auto; display: block; }
   .dock__tel { flex: none; width: var(--btn-h); padding: 0; }
   .cards, .others .cards, .cards--three { grid-template-columns: repeat(2, 1fr); }
   .obj__grid, .route__grid, .flat { grid-template-columns: 1fr; }
+  .obj__grid { grid-template-areas: "text" "aside" "gal"; }
+  .gal__grid.obj__gal { grid-auto-rows: clamp(140px, 24vw, 220px); }
   .aside { position: static; }
   .burger { display: block; }
   .nav {
@@ -662,6 +738,9 @@ img { max-width: 100%; height: auto; display: block; }
   .gal__grid, .gal__grid--four { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 42vw; }
   .gal__grid--four a:first-child { grid-column: span 2; grid-row: span 1; }
   .gal__grid--four a:nth-child(4) { grid-column: span 2; }
+  .gal__grid.obj__gal { grid-auto-rows: 36vw; }
+  .gal__grid.obj__gal { grid-template-rows: 58vw; }
+  .gal__grid.obj__gal a:first-child { grid-row: span 1; }
   .chan { grid-template-columns: 1fr; width: 100%; }
   .map { aspect-ratio: 4 / 5; }
   .near--wide .near__list { grid-template-columns: 1fr; }
