@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /* Страницы сайта: каждая папка с index.html (корень — главная).
    Новая страница — просто новая папка, конфиг править не нужно. */
-const skip = new Set(['node_modules', 'dist', 'public', 'src', 'scripts', 'archive', 'research']);
+const skip = new Set(['node_modules', 'dist', 'public', 'src', 'scripts', 'archive', 'research', 'videos']);
 function findPages(dir, rel = '') {
   const found = {};
   if (existsSync(join(dir, 'index.html'))) found[rel ? rel.replaceAll('/', '-') : 'main'] = join(dir, 'index.html');

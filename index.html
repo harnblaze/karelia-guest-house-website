@@ -18,14 +18,16 @@
 <!-- ============================ ГЕРОЙ ============================ -->
 <section class="hero" id="top">
   <img class="hero__bg" src="/photos/hero-winter-2.webp" srcset="/photos/hero-winter-2@sm.webp 900w, /photos/hero-winter-2.webp 2000w" sizes="100vw" alt="Большой гостевой дом на заснеженной поляне среди леса, за ним домик на троих и баня" fetchpriority="high" width="2000" height="1116">
+  <video class="hero__video" muted loop playsinline preload="none" aria-hidden="true" hidden></video>
   <div class="hero__veil" aria-hidden="true"></div>
 
   <!-- ВРЕМЕННО: переключатель фона первого экрана для показа клиенту.
-       Ссылка с нужным фоном: /?bg=2. После выбора удалить этот блок,
+       Ссылка с нужным фоном: /?bg=2 (лето), /?bg=3 (видео). После выбора удалить этот блок,
        код «bgswitch» в src/site.js и стили .bgswitch в src/site.css. -->
   <div class="bgswitch" role="group" aria-label="Фон первого экрана (временно)">
     <button type="button" data-bg="1" aria-pressed="true">Зима</button>
     <button type="button" data-bg="2" aria-pressed="false">Лето</button>
+    <button type="button" data-bg="3" aria-pressed="false">Видео</button>
   </div>
 
 
