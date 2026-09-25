@@ -312,7 +312,9 @@ img { max-width: 100%; height: auto; display: block; }
   font: 400 13px/1 var(--f-b); color: #fff; background: transparent;
 }
 .bgswitch button[aria-pressed="true"] { background: var(--ivory); color: var(--ink); }
-@media (max-width: 720px) { .bgswitch { bottom: auto; top: 5.6rem; } }
+/* Пока выбранный фон загружается, кнопка мягко пульсирует. */
+.bgswitch[aria-busy="true"] button[aria-pressed="true"] { animation: bg-busy 1s ease-in-out infinite alternate; }
+@keyframes bg-busy { to { opacity: .55; } }
 
 /* --- четыре опоры ------------------------------------------------------ */
 .pillars { background: var(--ivory-2) var(--grain); }
