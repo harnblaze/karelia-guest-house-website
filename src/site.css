@@ -26,12 +26,15 @@
   --gold:    #b0915a;
   --gold-lt: #dcc392;
   --gold-dk: #7f6232;
+  /* Глубина тёмных секций: тёплый свет из верхнего угла и затемнение к краям. */
+  --glow:     radial-gradient(ellipse 70% 90% at 88% 0%, rgba(220,195,146,.14), transparent 62%);
+  --vignette: radial-gradient(ellipse 125% 105% at 50% 45%, transparent 52%, rgba(10,14,9,.5) 100%);
   /* Бумажное зерно: мелкий шум поверх светлых фонов. */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .12 0 0 0 0 .13 0 0 0 0 .09 .34 0 0 0 -.11'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 body {
@@ -203,13 +206,50 @@ img { max-width: 100%; height: auto; display: block; }
   background: rgba(255,255,255,.14); border: 0; border-radius: 50%; cursor: pointer;
 }
 .burger span { display: block; height: 2px; background: #fff; border-radius: 2px; margin: 4px 0; transition: transform .2s, opacity .2s; }
+
+/* Шапка после первого экрана (класс ставит site.js): закреплена сверху,
+   светлая, полупрозрачная, с размытием того, что под ней. Подложка — на ::before:
+   размытие или сдвиг на самой шапке заперли бы внутри неё мобильное меню. */
+.top--solid { position: fixed; animation: top-in .45s cubic-bezier(.16,1,.3,1); transition: transform .35s cubic-bezier(.16,1,.3,1); }
+.top--solid::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: rgba(247,244,236,.86); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 1px 0 rgba(176,145,90,.35), 0 12px 30px -24px rgba(20,26,18,.5);
+}
+.top--solid .top__in { padding: .6rem 0; }
+.top--solid .brand { color: var(--ink); }
+.top--solid .brand__txt u { display: none; }
+.top--solid .burger { background: rgba(30,35,26,.07); }
+.top--solid .burger span { background: var(--ink); }
+.top--solid .brand:focus-visible, .top--solid .burger:focus-visible { outline-color: var(--green); }
+/* На телефоне шапка уезжает вверх при прокрутке вниз и возвращается при прокрутке вверх. */
+.top--hidden { transform: translateY(-110%); }
+.menu-open .top { transform: none; }
+.menu-open .top--solid .burger { background: rgba(255,255,255,.14); }
+.menu-open .top--solid .burger span { background: #fff; }
+@keyframes top-in { from { transform: translateY(-100%); } }
+@media (prefers-reduced-motion: reduce) { .top--solid { animation: none; transition: none; } }
+@media (min-width: 1101px) {
+  .top--solid .nav__link { color: var(--ink); }
+  .top--solid .nav__link:hover, .top--solid .nav__link[aria-current="page"] { border-bottom-color: var(--gold); }
+  .top--solid .nav__cta { background: var(--green); border-color: var(--green); color: #fff; }
+  .top--solid .nav__cta:hover { background: var(--green-dk); border-color: var(--green-dk); }
+  .top--solid :focus-visible { outline-color: var(--green); }
+}
 .menu-open .burger span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
 .menu-open .burger span:nth-child(2) { opacity: 0; }
 .menu-open .burger span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
 /* --- герой ------------------------------------------------------------ */
 /* Обрезка — для параллакса: фон при прокрутке сдвигается вниз (см. site.js). */
-.hero { position: relative; min-height: clamp(560px, 88vh, 860px); display: flex; isolation: isolate; overflow: hidden; overflow: clip; }
+.hero { --fade: clamp(3.5rem, 8vw, 7.5rem); --fade-to: var(--ivory-2); position: relative; min-height: clamp(560px, 88vh, 860px); display: flex; isolation: isolate; overflow: hidden; overflow: clip; }
+/* Низ первого экрана растворяется в фоне следующей секции (для коротких первых экранов внутренних страниц — тоже). */
+.hero::after, .phero::after {
+  content: ""; position: absolute; inset: auto 0 0; height: var(--fade); z-index: -1; pointer-events: none;
+  background: var(--fade-to) var(--grain);
+  -webkit-mask: linear-gradient(transparent, rgba(0,0,0,.1) 30%, rgba(0,0,0,.5) 65%, #000);
+          mask: linear-gradient(transparent, rgba(0,0,0,.1) 30%, rgba(0,0,0,.5) 65%, #000);
+}
 .hero__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
 .hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
 .hero__video[hidden] { display: none; }
@@ -228,7 +268,7 @@ img { max-width: 100%; height: auto; display: block; }
 .hero__in {
   position: relative; display: flex; align-items: flex-end; flex-wrap: wrap;
   align-content: flex-end;
-  gap: 2rem; padding: 7.5rem 0 3rem; color: #fff; width: min(100% - 2 * var(--gutter), 1280px);
+  gap: 2rem; padding: 7.5rem 0 calc(var(--fade) + .6rem); color: #fff; width: min(100% - 2 * var(--gutter), 1280px);
 }
 .hero__text { flex: 1 1 24rem; max-width: 40rem; }
 .hero__eyebrow, .titled .hero__eyebrow { margin: 0 0 1.1rem; color: #fff; }
@@ -307,7 +347,15 @@ img { max-width: 100%; height: auto; display: block; }
   box-shadow: 0 1px 2px rgba(30,35,26,.06), 0 12px 28px -18px rgba(30,35,26,.4);
 }
 .card__ph { position: relative; display: block; border-radius: var(--r); overflow: hidden; }
-.card__ph img { aspect-ratio: 4 / 3; object-fit: cover; width: 100%; display: block; }
+.card__ph img { aspect-ratio: 4 / 3; object-fit: cover; width: 100%; display: block; transition: transform 1.2s cubic-bezier(.16,1,.3,1); }
+/* Живая карточка: при наведении приподнимается, тень теплеет, фото медленно приближается. */
+.card { transition: translate .5s cubic-bezier(.16,1,.3,1), box-shadow .5s cubic-bezier(.16,1,.3,1); }
+@media (hover: hover) {
+  .card:hover { translate: 0 -6px; box-shadow: 0 2px 4px rgba(42,51,37,.06), 0 30px 50px -28px rgba(46,70,38,.62); }
+  .card:hover .card__ph img { transform: scale(1.05); }
+}
+.card:focus-within { translate: 0 -6px; box-shadow: 0 2px 4px rgba(42,51,37,.06), 0 30px 50px -28px rgba(46,70,38,.62); }
+@media (prefers-reduced-motion: reduce) { .card, .card__ph img { transition: none; } }
 .tag {
   position: absolute; top: .75rem; left: .75rem;
   background: rgba(255,255,255,.95); color: var(--ink);
@@ -331,7 +379,7 @@ img { max-width: 100%; height: auto; display: block; }
 /* --- природа -------------------------------------------------------------- */
 .nature { position: relative; padding: var(--band) 0; isolation: isolate; color: #fff; }
 .nature__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
-.nature__veil { position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(20,26,18,.93) 0%, rgba(20,26,18,.78) 46%, rgba(20,26,18,.62) 100%); }
+.nature__veil { position: absolute; inset: 0; z-index: -1; background: var(--glow), var(--vignette), linear-gradient(90deg, rgba(20,26,18,.93) 0%, rgba(20,26,18,.78) 46%, rgba(20,26,18,.62) 100%); }
 .nature__in { display: grid; grid-template-columns: minmax(16rem, 30%) 1fr; gap: clamp(1.6rem, 3vw, 3.4rem); align-items: center; }
 .nature__text p { margin: 1.1rem 0 1.8rem; font-size: 1.02rem; opacity: .9; }
 .nature__text .nature__seasons {
@@ -344,7 +392,7 @@ img { max-width: 100%; height: auto; display: block; }
 .nature__grid figcaption { margin-top: .6rem; font-size: 14px; opacity: .88; }
 
 /* --- территория ------------------------------------------------------------ */
-.land { padding: var(--band) 0; background: var(--ivory-2) var(--grain); }
+.land { position: relative; isolation: isolate; padding: var(--band) 0; background: var(--ivory-2) var(--grain); }
 .land__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
 .land__grid figure { margin: 0; }
 .land__grid img { aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--r); width: 100%; }
@@ -411,7 +459,7 @@ img { max-width: 100%; height: auto; display: block; }
   display: grid; grid-template-columns: auto 1fr; column-gap: .9rem; align-items: center;
   margin: 0 0 1.5rem; color: var(--ink);
 }
-.rating b { grid-row: span 2; font: 400 3rem/1 var(--f-h); color: var(--gold-dk); }
+.rating b { grid-row: span 2; font: 400 clamp(3.4rem, 5vw, 4.4rem)/.9 var(--f-h); letter-spacing: -.02em; color: var(--gold-dk); }
 .rating__stars { display: flex; gap: .15rem; }
 .rating__stars svg { width: 18px; height: 18px; fill: var(--gold); }
 .rating__txt { font-size: 14px; line-height: 1.35; color: var(--muted); }
@@ -443,7 +491,7 @@ img { max-width: 100%; height: auto; display: block; }
 .cta__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
 .cta__veil {
   position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(90deg, rgba(20,26,18,.88) 0%, rgba(20,26,18,.7) 42%, rgba(20,26,18,.45) 100%);
+  background: var(--glow), var(--vignette), linear-gradient(90deg, rgba(20,26,18,.88) 0%, rgba(20,26,18,.7) 42%, rgba(20,26,18,.45) 100%);
 }
 .cta .h2 { font-size: clamp(2.3rem, 4.4vw, 4rem); }
 .cta__in { display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
@@ -468,7 +516,7 @@ img { max-width: 100%; height: auto; display: block; }
 .chan__a svg .st { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
 
 /* --- подвал ----------------------------------------------------------------------- */
-.foot { background: var(--deep); color: #fff; padding: clamp(2.2rem, 3.4vw, 3rem) 0 1.4rem; box-shadow: inset 0 1px 0 rgba(176,145,90,.5); }
+.foot { background: radial-gradient(ellipse 80% 160% at 10% 0%, #36422f, transparent 65%) var(--deep); color: #fff; padding: clamp(2.2rem, 3.4vw, 3rem) 0 1.4rem; box-shadow: inset 0 1px 0 rgba(176,145,90,.5); }
 .foot__in { display: flex; align-items: center; gap: clamp(1rem, 2.4vw, 2.4rem); flex-wrap: wrap; }
 .foot__nav { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; }
 .foot__nav a, .foot__contacts a { color: #fff; text-decoration: none; opacity: .88; font-size: 15px; }
@@ -489,20 +537,22 @@ img { max-width: 100%; height: auto; display: block; }
    ===================================================================== */
 
 /* короткий герой с фото объекта */
-.phero { position: relative; min-height: clamp(420px, 62vh, 620px); display: flex; isolation: isolate; color: #fff; }
+.phero { --fade: clamp(3rem, 6vw, 5.5rem); --fade-to: var(--ivory-2); position: relative; min-height: clamp(420px, 62vh, 620px); display: flex; isolation: isolate; color: #fff; overflow: hidden; overflow: clip; }
+/* Под первым экраном «Как добраться» — светлый фон страницы, а не полоса фактов. */
+.phero:has(+ .route) { --fade-to: var(--ivory); }
 .phero__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
 /* Кадрирование фото по объектам. */
 .gal__grid img[src*="house3-stove"] { object-position: 12% 50%; }
 body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
-/* На телефоне шапка ложится на белые стены — сверху затемнение плотнее. */
-@media (max-width: 720px) {
-  .phero__veil { background: linear-gradient(180deg, rgba(20,26,18,.72) 0%, rgba(20,26,18,.3) 30%, rgba(20,26,18,.2) 50%, rgba(20,26,18,.78) 100%); }
-}
 .phero__veil {
   position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(180deg, rgba(20,26,18,.6) 0%, rgba(20,26,18,.12) 38%, rgba(20,26,18,.72) 100%);
 }
-.phero__in { align-self: flex-end; padding: 7rem 0 2.6rem; }
+/* На телефоне шапка ложится на белые стены — сверху затемнение плотнее. */
+@media (max-width: 720px) {
+  .phero__veil { background: linear-gradient(180deg, rgba(20,26,18,.72) 0%, rgba(20,26,18,.3) 30%, rgba(20,26,18,.2) 50%, rgba(20,26,18,.78) 100%); }
+}
+.phero__in { align-self: flex-end; padding: 7rem 0 calc(var(--fade) + .4rem); }
 /* Крошки лежат поверх фото — своя тёмная подложка держит контраст на светлых стенах. */
 .crumbs {
   display: inline-flex; flex-wrap: wrap; align-items: center; gap: .1rem .35rem;
@@ -528,7 +578,7 @@ body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
 .key span { font-size: 14.5px; color: var(--muted); }
 
 /* основной блок страницы объекта */
-.obj { padding: var(--band) 0; }
+.obj { position: relative; isolation: isolate; padding: var(--band) 0; }
 .obj__grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 1fr); gap: clamp(1.8rem, 4vw, 4rem); align-items: start; }
 .obj__lead { margin: 0 0 1.2rem; font-size: clamp(1.08rem, 1.4vw, 1.22rem); line-height: 1.55; }
 .obj__text p { max-width: 40rem; }
@@ -612,7 +662,7 @@ body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
 }
 
 /* карта и маршрут */
-.route { padding: var(--band) 0; }
+.route { position: relative; isolation: isolate; padding: var(--band) 0; }
 .route__grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr); gap: clamp(1.6rem, 3vw, 3rem); align-items: start; }
 .map { position: relative; border-radius: var(--r); overflow: hidden; background: var(--ivory-2); aspect-ratio: 16 / 11; }
 .map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
@@ -636,13 +686,39 @@ body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
 .pending { font-size: 14.5px; color: var(--muted); margin: .3rem 0 0; }
 
 /* превью карты на главной */
-.where { padding: var(--band) 0; background: var(--ivory-2) var(--grain); }
+.where { position: relative; isolation: isolate; padding: var(--band) 0; background: var(--ivory-2) var(--grain); }
+/* Линии рельефа, как на топографической карте: бледно, в одном углу секции. */
+.land::before, .where::before, .obj::before, .route::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: url("./topo.svg") 0 0 / 1200px auto; opacity: .42;
+  -webkit-mask: radial-gradient(ellipse 75% 85% at 100% 0%, #000 20%, transparent 85%);
+          mask: radial-gradient(ellipse 75% 85% at 100% 0%, #000 20%, transparent 85%);
+}
+/* В описании дома — под карточкой цены, где колонка пустеет. */
+.where::before, .obj::before, .route::before {
+  background-position: -400px -300px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 95% at 100% 100%, #000 20%, transparent 85%);
+          mask-image: radial-gradient(ellipse 70% 95% at 100% 100%, #000 20%, transparent 85%);
+}
+/* На «Как добраться» — слева внизу, под картой: справа идёт длинный список адресов. */
+.route::before {
+  -webkit-mask-image: radial-gradient(ellipse 60% 70% at 0% 100%, #000 20%, transparent 85%);
+          mask-image: radial-gradient(ellipse 60% 70% at 0% 100%, #000 20%, transparent 85%);
+}
 .where__lead { margin: 1rem 0 1.2rem; font-size: clamp(1.08rem, 1.4vw, 1.22rem); line-height: 1.55; }
 /* Время в пути — «Где мы» на главной и страница «Как добраться». */
 .dist { margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; max-width: 30rem; }
-.dist div { background: var(--white); border-radius: var(--r); padding: .75rem .95rem; }
+.dist div { background: var(--white); border-radius: var(--r); padding: .8rem .95rem .85rem; }
 .dist dt { font-size: 14px; color: var(--muted); }
-.dist dd { margin: .15rem 0 0; font: 400 1.2rem/1.2 var(--f-h); color: var(--ink); }
+.dist dd { margin: .3rem 0 0; font: 400 1.2rem/1.2 var(--f-h); color: var(--ink); }
+/* Число в расстоянии — крупно, золотом. */
+.dist dd b { font-weight: 400; font-size: 1.75em; line-height: 1; letter-spacing: -.01em; color: var(--gold-dk); margin-right: .08em; }
+.dist dd { white-space: nowrap; }
+@media (max-width: 720px) {
+  .dist div { padding-inline: .8rem; }
+  .dist dd { font-size: clamp(.95rem, 4.2vw, 1.2rem); }
+  .dist dd b { font-size: 1.6em; }
+}
 .dist__note { margin: .8rem 0 1.4rem; font-size: 14.5px; color: var(--muted); }
 
 
@@ -676,7 +752,7 @@ body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
 /* регион: фон на всю ширину, карточки мест поверх */
 .region { position: relative; padding: var(--band) 0; isolation: isolate; color: #fff; }
 .region__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
-.region__veil { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(20,26,18,.78) 0%, rgba(20,26,18,.45) 45%, rgba(20,26,18,.82) 100%); }
+.region__veil { position: absolute; inset: 0; z-index: -1; background: var(--glow), var(--vignette), linear-gradient(180deg, rgba(20,26,18,.78) 0%, rgba(20,26,18,.45) 45%, rgba(20,26,18,.82) 100%); }
 .link--light { color: #fff; border-bottom-color: rgba(220,195,146,.55); }
 .link--light:hover { color: #fff; border-bottom-color: var(--gold-lt); }
 .spots { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
@@ -705,6 +781,11 @@ body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
 /* Разный рисунок у трёх кромок — сдвигаем плитку. */
 .region { -webkit-mask-position: -520px 0, 0 calc(var(--tree) - 1px); mask-position: -520px 0, 0 calc(var(--tree) - 1px); }
 .cta    { -webkit-mask-position: -1030px 0, 0 calc(var(--tree) - 1px); mask-position: -1030px 0, 0 calc(var(--tree) - 1px); }
+/* Лес нужен только на переходе из светлой секции: после тёмной «Куда съездить рядом» его нет. */
+main:has(> .region:last-child) + .cta {
+  margin-top: 0; padding-top: calc(var(--band) * 1.15); -webkit-mask: none; mask: none;
+  box-shadow: inset 0 1px 0 rgba(176,145,90,.5);
+}
 
 /* --- появление при прокрутке (классы расставляет site.js) -------------------
    .rv — блок проявляется с подъёмом; .rvi — фото в блоке открывается шторкой снизу. */
@@ -799,6 +880,8 @@ body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
   .pill__i svg { width: 48px; height: 48px; }
   .pill { flex-direction: column; align-items: flex-start; gap: .5rem; }
   .hero__in { padding-top: 6.5rem; }
+  /* Надзаголовок первого экрана длинный — на телефоне без черты, чтобы шёл одной строкой. */
+  .hero__eyebrow::before { display: none; }
   .hero__script { display: none; }
   .hero__side { flex-basis: 100%; margin-left: 0; align-items: flex-start; }
   .foot__contacts { margin-left: 0; }

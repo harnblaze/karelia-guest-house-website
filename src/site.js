@@ -111,15 +111,38 @@ if (dock && 'IntersectionObserver' in window) {
   dock.inert = true;
 }
 
+/* --- шапка после первого экрана ------------------------------------------
+   Пока виден первый экран, шапка лежит поверх фото. Дальше — закреплена
+   сверху светлой панелью; на телефоне прячется при прокрутке вниз. */
+const topBar = document.querySelector('.top');
+const firstScreen = document.querySelector('.hero, .phero');
+if (topBar && firstScreen) {
+  const narrowTop = matchMedia('(max-width: 1100px)');
+  let lastY = window.scrollY;
+  let queuedTop = false;
+  const updateTop = () => {
+    queuedTop = false;
+    const y = window.scrollY;
+    const solid = y > firstScreen.offsetHeight - 80;
+    topBar.classList.toggle('top--solid', solid);
+    if (!solid || !narrowTop.matches || y < lastY - 4) topBar.classList.remove('top--hidden');
+    else if (y > lastY + 4 && !document.body.classList.contains('menu-open')) topBar.classList.add('top--hidden');
+    lastY = y;
+  };
+  window.addEventListener('scroll', () => { if (!queuedTop) { queuedTop = true; requestAnimationFrame(updateTop); } }, { passive: true });
+  narrowTop.addEventListener('change', updateTop);
+  updateTop();
+}
+
 /* --- движение при прокрутке ------------------------------------------
    Параллакс первого экрана и появление блоков. Тем, кто просит меньше
    движения, всё показано сразу и неподвижно. */
 const calmMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const heroSection = document.querySelector('.hero');
+const heroSection = document.querySelector('.hero, .phero');
 if (heroSection && !calmMotion) {
-  const layers = [...heroSection.querySelectorAll('.hero__bg, .hero__video')];
-  const inner = heroSection.querySelector('.hero__in');
+  const layers = [...heroSection.querySelectorAll('.hero__bg, .hero__video, .phero__bg')];
+  const inner = heroSection.querySelector('.hero__in, .phero__in');
   let queued = false;
   const paint = () => {
     queued = false;
@@ -140,24 +163,34 @@ if (heroSection && !calmMotion) {
 }
 
 if (!calmMotion && 'IntersectionObserver' in window) {
-  const up = [...document.querySelectorAll('.pill, .head, .revs__text, .card, .rev, .nature__text, .near, .extras, .spot, .region__more, .stay__col, .stay__note, .where .titled, .where__lead, .dist div, .go, .where .map, .cta__text, .cta .chan')];
-  const photos = [...document.querySelectorAll('.card__ph, .nature__grid figure, .land__grid figure, .spot')];
-  const all = [...up, ...photos];
-  up.forEach((el) => el.classList.add('rv'));
-  photos.forEach((el) => el.classList.add('rvi'));
+  const up = [...document.querySelectorAll([
+    // главная
+    '.pill, .head, .revs__text, .card, .rev, .nature__text, .near, .extras, .spot, .region__more',
+    '.stay__col, .stay__note, .where .titled, .where__lead, .dist div, .go, .map, .cta__text, .cta .chan',
+    // внутренние страницы
+    '.key, .obj__text, .aside, .road .titled, .flat__info, .map__note, .places li, .route .near__h',
+  ].join(', '))];
+  const photos = [...document.querySelectorAll('.card__ph, .nature__grid figure, .land__grid figure, .spot, .gal__grid a, .flat__gal a')];
   // Уже прокрученное выше экрана (переход по якорю, возврат назад) не прячем.
-  all.forEach((el) => { if (el.getBoundingClientRect().bottom < 0) el.classList.add('is-in'); });
+  const ahead = (el) => el.getBoundingClientRect().bottom >= 0;
+  up.filter(ahead).forEach((el) => el.classList.add('rv'));
+  photos.filter(ahead).forEach((el) => el.classList.add('rvi'));
+  const all = [...document.querySelectorAll('.rv, .rvi')];
   document.documentElement.classList.add('rv-on');
 
   const io = new IntersectionObserver((entries) => {
     // Одновременно вошедшие блоки проявляются по очереди.
     entries.filter((e) => e.isIntersecting).forEach((e, k) => {
-      e.target.style.setProperty('--d', `${Math.min(k, 5) * 90}ms`);
-      e.target.classList.add('is-in');
-      io.unobserve(e.target);
+      const el = e.target;
+      const delay = Math.min(k, 5) * 90;
+      el.style.setProperty('--d', `${delay}ms`);
+      el.classList.add('is-in');
+      io.unobserve(el);
+      // Когда блок проявился, возвращаем ему обычные стили — иначе они мешают эффектам наведения.
+      setTimeout(() => { el.classList.remove('rv', 'rvi', 'is-in'); el.style.removeProperty('--d'); }, delay + 1800);
     });
   }, { rootMargin: '0px 0px -8% 0px', threshold: .12 });
-  all.forEach((el) => { if (!el.classList.contains('is-in')) io.observe(el); });
+  all.forEach((el) => io.observe(el));
 }
 
 /* --- ВРЕМЕННО: переключатель фона первого экрана ---------------------
