@@ -569,9 +569,10 @@ body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
 .phero__p { margin: 1rem 0 0; max-width: 38rem; font-size: clamp(1rem, 1.25vw, 1.12rem); opacity: .94; }
 
 /* ключевые цифры объекта */
-.keys { background: var(--ivory-2); }
-.keys__in { display: grid; grid-template-columns: repeat(4, 1fr); padding: clamp(1.4rem, 2.4vw, 2.1rem) 0; }
-.key { padding: .2rem clamp(.6rem, 1.6vw, 1.6rem); border-right: 1px solid var(--line); }
+/* Полоса фактов — того же вида, что полоса «четыре опоры» на главной. */
+.keys { background: var(--ivory-2) var(--grain); }
+.keys__in { display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; padding: clamp(1.6rem, 2.6vw, 2.4rem) 0; }
+.key { padding: .3rem clamp(.6rem, 1.6vw, 1.6rem); border-right: 1px solid var(--line); }
 .key:first-child { padding-left: 0; }
 .key:last-child { border-right: 0; }
 .key b { display: block; font-family: var(--f-h); font-weight: 400; font-size: clamp(1.35rem, 2vw, 1.75rem); line-height: 1.15; }
