@@ -88,6 +88,13 @@ if (lb && typeof lb.showModal === 'function') {
 }
 
 
+/* --- галереи квартир на телефоне --------------------------------------
+   Видны три фото из пяти: на третьем метка «+2» (показывает CSS до 720 px). */
+document.querySelectorAll('.flat__gal').forEach((gal) => {
+  const links = gal.querySelectorAll('a[data-full]');
+  if (links.length > 3) links[2].dataset.more = `+${links.length - 3}`;
+});
+
 /* --- нижняя панель связи ------------------------------------------------
    Видна, когда первый экран уже прокручен, а блок «Напишите нам» и подвал
    ещё не на экране. Пока скрыта — недоступна для фокуса. */
@@ -168,7 +175,7 @@ if (!calmMotion && 'IntersectionObserver' in window) {
     '.pill, .head, .revs__text, .card, .rev, .nature__text, .near, .extras, .spot, .region__more',
     '.stay__col, .stay__note, .where .titled, .where__lead, .dist div, .go, .map, .cta__text, .cta .chan',
     // внутренние страницы
-    '.key, .obj__text, .aside, .road .titled, .flat__info, .map__note, .places li, .route .near__h',
+    '.key, .obj__text, .aside, .road .titled, .flat__info, .flats-info__grid > div, .map__note, .places li, .route .near__h',
   ].join(', '))];
   const photos = [...document.querySelectorAll('.card__ph, .nature__grid figure, .land__grid figure, .spot, .gal__grid a, .flat__gal a')];
   // Уже прокрученное выше экрана (переход по якорю, возврат назад) не прячем.
