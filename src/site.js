@@ -148,7 +148,7 @@ const calmMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const heroSection = document.querySelector('.hero, .phero');
 if (heroSection && !calmMotion) {
-  const layers = [...heroSection.querySelectorAll('.hero__bg, .hero__video, .phero__bg')];
+  const layers = [...heroSection.querySelectorAll('.hero__bg, .phero__bg')];
   const inner = heroSection.querySelector('.hero__in, .phero__in');
   let queued = false;
   const paint = () => {
@@ -198,81 +198,4 @@ if (!calmMotion && 'IntersectionObserver' in window) {
     });
   }, { rootMargin: '0px 0px -8% 0px', threshold: .12 });
   all.forEach((el) => io.observe(el));
-}
-
-/* --- ВРЕМЕННО: переключатель фона первого экрана ---------------------
-   Для показа клиенту: кнопки «Зима / Лето / Видео» или ссылки /?bg=2, /?bg=3.
-   Выбор запоминается в браузере. После решения удалить этот блок,
-   разметку .bgswitch в index.html и её стили. */
-const bgSwitch = document.querySelector('.bgswitch');
-const heroBg = document.querySelector('.hero__bg');
-const heroVideo = document.querySelector('.hero__video');
-if (bgSwitch && heroBg) {
-  const base = import.meta.env.BASE_URL;
-  const variants = {
-    1: { name: 'hero-winter-2', alt: 'Большой гостевой дом на заснеженной поляне среди леса, за ним домик на троих и баня' },
-    2: { name: 'hero-summer', alt: 'Большой гостевой дом на летней поляне, рядом геокупол и лес' },
-    3: { video: true },
-  };
-  // Видео не запускаем тем, кто просит меньше движения или экономит трафик — им остаётся заставка.
-  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches || (navigator.connection && navigator.connection.saveData);
-  const poster = `${base}video/hero-loop-poster.webp`;
-  const files = (v) => (v.video
-    ? { srcset: '', src: poster }
-    : { srcset: `${base}photos/${v.name}@sm.webp 900w, ${base}photos/${v.name}.webp 2000w`, src: `${base}photos/${v.name}.webp` });
-  // Фото загружаем заранее и подставляем, когда оно готово: иначе на медленной связи
-  // кнопка уже переключилась, а на экране ещё несколько секунд прежний фон.
-  const loaded = new Map();
-  const preload = (key) => {
-    const v = variants[key] || variants[1];
-    if (!loaded.has(key)) {
-      const { srcset, src } = files(v);
-      const img = new Image();
-      img.sizes = heroBg.sizes || '100vw';
-      if (srcset) img.srcset = srcset;
-      img.src = src;
-      loaded.set(key, (img.decode ? img.decode() : Promise.resolve()).catch(() => {}));
-    }
-    return loaded.get(key);
-  };
-  const setImage = (v) => {
-    const { srcset, src } = files(v);
-    if (srcset) heroBg.srcset = srcset; else heroBg.removeAttribute('srcset');
-    heroBg.src = src;
-  };
-  let pending = 0;
-  const apply = async (key) => {
-    const v = variants[key] || variants[1];
-    const mine = ++pending;
-    bgSwitch.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.bg === String(key))));
-    bgSwitch.setAttribute('aria-busy', 'true');
-    await preload(key);
-    if (mine !== pending) return; // пока грузилось, выбрали другой фон
-    bgSwitch.removeAttribute('aria-busy');
-    if (v.video && heroVideo) {
-      setImage(v);
-      heroBg.alt = 'Поляна с гостевыми домами летом и зимой';
-      if (!calm) {
-        if (!heroVideo.firstChild) {
-          heroVideo.poster = poster;
-          heroVideo.innerHTML = `<source src="${base}video/hero-loop.webm" type="video/webm"><source src="${base}video/hero-loop.mp4" type="video/mp4">`;
-          heroVideo.preload = 'auto';
-          heroVideo.load();
-        }
-        heroVideo.hidden = false;
-        heroVideo.play().catch(() => {});
-      }
-    } else {
-      if (heroVideo) { heroVideo.pause(); heroVideo.hidden = true; }
-      setImage(v);
-      heroBg.alt = v.alt;
-    }
-    try { localStorage.setItem('hero-bg', String(key)); } catch (e) { /* без хранилища просто не запоминаем */ }
-  };
-  let start = new URLSearchParams(location.search).get('bg');
-  if (!start) { try { start = localStorage.getItem('hero-bg'); } catch (e) { /* нет хранилища */ } }
-  if (start && variants[start] && start !== '1') apply(start);
-  bgSwitch.addEventListener('click', (e) => { const b = e.target.closest('button[data-bg]'); if (b) apply(b.dataset.bg); });
-  // Начинаем загрузку уже при наведении или касании — к нажатию фото часто готово.
-  ['pointerover', 'focusin'].forEach((type) => bgSwitch.addEventListener(type, (e) => { const b = e.target.closest('button[data-bg]'); if (b) preload(b.dataset.bg); }));
 }
