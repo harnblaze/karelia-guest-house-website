@@ -270,7 +270,18 @@ img { max-width: 100%; height: auto; display: block; }
   align-content: flex-end;
   gap: 2rem; padding: 7.5rem 0 calc(var(--fade) + .6rem); color: #fff; width: min(100% - 2 * var(--gutter), 1280px);
 }
-.hero__text { flex: 1 1 24rem; max-width: 40rem; }
+.hero__text { position: relative; flex: 1 1 24rem; max-width: 40rem; }
+/* Мягкая тень за текстом: на планшете и ноутбуке заголовок ложится на белую стену дома.
+   Не плашка — размытое пятно без краёв, фото вокруг остаётся светлым. */
+.hero__text::before {
+  content: ""; position: absolute; inset: -14% -18% -10% -30%; z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(20,26,18,.5), rgba(20,26,18,.3) 55%, transparent);
+}
+.hero__h, .hero__p { text-shadow: 0 1px 18px rgba(20,26,18,.45), 0 1px 3px rgba(20,26,18,.35); }
+/* На планшете текст занимает почти всю ширину и целиком лежит на стене — тень плотнее. */
+@media (min-width: 721px) and (max-width: 1100px) {
+  .hero__text::before { background: radial-gradient(closest-side, rgba(20,26,18,.62), rgba(20,26,18,.42) 60%, transparent); }
+}
 .hero__eyebrow, .titled .hero__eyebrow { margin: 0 0 1.1rem; color: #fff; }
 .hero__eyebrow, .hero__script { text-shadow: 0 1px 14px rgba(20,26,18,.55); }
 .hero__h {
