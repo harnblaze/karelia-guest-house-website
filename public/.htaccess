@@ -1,0 +1,57 @@
+# Настройки для Apache (большинство виртуальных хостингов). Если сервер на nginx —
+# эквивалент лежит в deploy/nginx.conf, этот файл тогда не нужен.
+
+Options -Indexes
+DirectoryIndex index.html
+ErrorDocument 404 /404.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Единый адрес: только https и без www.
+  RewriteCond %{HTTPS} !=on [OR]
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteRule ^ https://restkarelia.ru%{REQUEST_URI} [R=301,L,NE]
+
+  # /index.html и /раздел/index.html — дубли адресов со слэшем на конце.
+  RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[\s?] [NC]
+  RewriteRule ^(.*/)?index\.html$ https://restkarelia.ru/$1 [R=301,L]
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType image/webp .webp
+  AddType image/svg+xml .svg
+  AddType font/woff2 .woff2
+  AddType application/xml .xml
+  AddCharset utf-8 .html .css .js .xml .txt .svg
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/javascript application/xml image/svg+xml
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  # Источники проверены по страницам: свои файлы и карта Яндекса во фрейме. Новые внешние
+  # скрипты (например, счётчик) не заработают, пока их адрес не добавлен сюда.
+  Header always set Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; frame-src https://yandex.ru https://*.yandex.ru; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+  # HSTS — только по https. Включено без includeSubDomains: про поддомены ничего не известно.
+  Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on'"
+
+  # Кэш: файлы с хэшем в имени не меняются — год; фото и шрифты — месяц; страницы — всегда свежие.
+  <FilesMatch "\.(html|xml|txt)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <FilesMatch "\.(webp|jpg|png|svg|ico|woff2)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_headers.c>
+  <If "%{REQUEST_URI} =~ m#^/assets/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+</IfModule>

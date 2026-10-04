@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:local": "LOCAL_FILES=1 vite build",
     "preview": "vite preview --port 4173"
   },
   "devDependencies": {

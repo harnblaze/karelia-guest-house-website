@@ -32,6 +32,7 @@ if (burger && nav) {
 const lb = document.getElementById('lb');
 if (lb && typeof lb.showModal === 'function') {
   const img = lb.querySelector('.lb__img');
+  const blank = img.getAttribute('src'); // пустая картинка-заглушка из разметки, пока окно закрыто
   const txt = lb.querySelector('.lb__txt');
   const count = lb.querySelector('.lb__count');
   const navs = lb.querySelectorAll('.lb__nav');
@@ -82,11 +83,33 @@ if (lb && typeof lb.showModal === 'function') {
   });
 
   lb.addEventListener('close', () => {
-    img.removeAttribute('src');
+    img.src = blank;
     if (opener) opener.focus();
   });
 }
 
+
+/* --- горизонтальные ленты на телефоне ---------------------------------
+   До 720 px отзывы, условия, фото природы и места рядом листаются вбок.
+   Ленту без ссылок внутри иначе не прокрутить с клавиатуры — даём ей фокус и имя. */
+const ribbons = document.querySelectorAll('.revs__grid, .nature__grid, .spots, .stay__grid');
+if (ribbons.length) {
+  const narrowRibbons = matchMedia('(max-width: 720px)');
+  const syncRibbons = () => ribbons.forEach((el) => {
+    if (narrowRibbons.matches) {
+      const head = el.closest('section')?.querySelector('h2');
+      el.tabIndex = 0;
+      el.setAttribute('role', 'group');
+      el.setAttribute('aria-label', `${head ? head.textContent.trim() : 'Лента'}, листается вбок`);
+    } else {
+      el.removeAttribute('tabindex');
+      el.removeAttribute('role');
+      el.removeAttribute('aria-label');
+    }
+  });
+  narrowRibbons.addEventListener('change', syncRibbons);
+  syncRibbons();
+}
 
 /* --- галереи квартир на телефоне --------------------------------------
    Видны три фото из пяти: на третьем метка «+2» (показывает CSS до 720 px). */

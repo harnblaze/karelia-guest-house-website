@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite';
-import { readdirSync, readFileSync, rmSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readdirSync, readFileSync, rmSync, existsSync, statSync } from 'node:fs';
+import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /* Страницы сайта: каждая папка с index.html (корень — главная).
    Новая страница — просто новая папка, конфиг править не нужно. */
-const skip = new Set(['node_modules', 'dist', 'public', 'src', 'scripts', 'archive', 'research', 'videos']);
+const skip = new Set(['node_modules', 'dist', 'dist-local', 'public', 'src', 'scripts', 'archive', 'research', 'videos']);
 function findPages(dir, rel = '') {
   const found = {};
   if (existsSync(join(dir, 'index.html'))) found[rel ? rel.replaceAll('/', '-') : 'main'] = join(dir, 'index.html');
@@ -18,6 +18,12 @@ function findPages(dir, rel = '') {
   return found;
 }
 const pages = findPages(__dirname);
+// Страница 404 лежит в корне файлом 404.html: так её находят и Apache/nginx, и GitHub Pages.
+if (existsSync(join(__dirname, '404.html'))) pages.notfound = join(__dirname, '404.html');
+
+/* Боевой адрес сайта: от него строятся canonical, Open Graph, sitemap и robots.txt.
+   Сборка для превью на GitHub Pages тоже указывает сюда — дубли не индексируются. */
+const SITE = 'https://restkarelia.ru';
 
 /* Подписи связи на страницах объектов называют объект, а WhatsApp получает
    готовый текст с его названием. На остальных страницах — общие подписи. */
@@ -99,12 +105,133 @@ function partials() {
 /* Провенанс растров лежит рядом с ними в *.webp.json и нужен репозиторию,
    но не публике: эти файлы содержат рабочие пометки. Из сборки их убираем. */
 function stripProvenanceSidecars() {
+  let outDir = 'dist';
   return {
     name: 'strip-provenance-sidecars',
+    configResolved(c) { outDir = c.build.outDir.startsWith('/') ? c.build.outDir : join(c.root, c.build.outDir); },
     closeBundle() {
-      const d = join('dist', 'photos');
+      const d = join(outDir, 'photos');
       if (!existsSync(d)) return;
       for (const f of readdirSync(d)) if (f.endsWith('.json')) rmSync(join(d, f));
+    },
+  };
+}
+
+/* SEO для каждой страницы: canonical, Open Graph, Twitter и структурированные данные.
+   Заголовок и описание берутся из <title> и meta description самой страницы,
+   картинка превью — public/og/<страница>.jpg (1200×630). */
+const BUSINESS = {
+  '@context': 'https://schema.org',
+  '@type': 'LodgingBusiness',
+  name: 'Гостевые дома «Сюскюянйоки»',
+  url: `${SITE}/`,
+  image: `${SITE}/og/home.jpg`,
+  telephone: '+7 999 290-18-15',
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'деревня Кителя, Питкярантский район',
+    addressRegion: 'Республика Карелия',
+    addressCountry: 'RU',
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: 61.684959, longitude: 31.318357 },
+  checkinTime: '14:00',
+  checkoutTime: '12:00',
+  petsAllowed: false,
+  sameAs: ['https://vk.ru/xiuskuyanjoki'],
+};
+const ldScript = (data) => `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+const routeOf = (file) => {
+  const rel = relative(__dirname, file).replaceAll('\\', '/');
+  return rel === 'index.html' ? '/' : `/${rel.replace(/index\.html$/, '')}`;
+};
+function seo() {
+  return {
+    name: 'seo-meta',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html, ctx) {
+        const page = (html.match(/<body[^>]*data-page="([^"]+)"/) || [])[1] || '';
+        if (page === '404') return html;
+        const route = routeOf(ctx.filename);
+        const url = `${SITE}${route}`;
+        const title = (html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
+        const desc = (html.match(/<meta name="description" content="([^"]*)">/) || [])[1] || '';
+        const img = `${SITE}/og/${page}.jpg`;
+        const tags = [
+          `<link rel="canonical" href="${url}">`,
+          '<meta property="og:type" content="website">',
+          '<meta property="og:locale" content="ru_RU">',
+          '<meta property="og:site_name" content="Гостевые дома «Сюскюянйоки»">',
+          `<meta property="og:title" content="${title}">`,
+          `<meta property="og:description" content="${desc}">`,
+          `<meta property="og:url" content="${url}">`,
+          `<meta property="og:image" content="${img}">`,
+          '<meta property="og:image:width" content="1200">',
+          '<meta property="og:image:height" content="630">',
+          '<meta name="twitter:card" content="summary_large_image">',
+        ];
+        // Превью в подпапке (GitHub Pages) не индексируем — это копия боевого сайта.
+        if (base !== '/') tags.unshift('<meta name="robots" content="noindex">');
+        if (page === 'home') tags.push(ldScript(BUSINESS));
+        // Хлебные крошки со страницы — в разметку BreadcrumbList (якорные пункты вроде «/#doma» пропускаем).
+        const crumbs = (html.match(/<ol class="crumbs">([\s\S]*?)<\/ol>/) || [])[1];
+        if (crumbs) {
+          const items = [...crumbs.matchAll(/<li[^>]*>(?:<a href="([^"#]*)">)?([^<]+)/g)]
+            .filter(([, href, name], i, all) => href || i === all.length - 1)
+            .map(([, href, name], i) => ({ '@type': 'ListItem', position: i + 1, name: name.replace(/&nbsp;/g, ' ').trim(), item: href ? `${SITE}${href}` : url }));
+          tags.push(ldScript({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items }));
+        }
+        return html.replace('</head>', `${tags.join('\n')}\n</head>`);
+      },
+    },
+  };
+}
+
+/* sitemap.xml и robots.txt собираются из списка страниц — новая страница попадает в них сама. */
+function sitemapAndRobots() {
+  return {
+    name: 'sitemap-robots',
+    apply: 'build',
+    generateBundle() {
+      const urls = Object.entries(pages).filter(([key]) => key !== 'notfound').map(([, file]) => `${SITE}${routeOf(file)}`).sort();
+      const body = urls.map((u) => `  <url><loc>${u}</loc></url>`).join('\n');
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n` });
+      this.emitFile({ type: 'asset', fileName: 'robots.txt', source: `User-agent: *\nDisallow:\n\nSitemap: ${SITE}/sitemap.xml\n` });
+    },
+  };
+}
+
+/* В исходниках комментарии в HTML нужны, в опубликованных страницах — нет. */
+function stripHtmlComments() {
+  return {
+    name: 'strip-html-comments',
+    apply: 'build',
+    transformIndexHtml: { order: 'post', handler: (html) => html.replace(/<!--[\s\S]*?-->\n?/g, '') },
+  };
+}
+
+/* В public/ лежат и запасные фото, которые сейчас ни на одной странице не показаны.
+   В сборку попадают только файлы, на которые есть ссылки из страниц, стилей и скриптов. */
+function pruneUnusedPublicFiles() {
+  let out = join(__dirname, 'dist');
+  return {
+    name: 'prune-unused-public-files',
+    apply: 'build',
+    configResolved(c) { out = c.build.outDir.startsWith('/') ? c.build.outDir : join(c.root, c.build.outDir); },
+    closeBundle() {
+      const texts = [];
+      const walk = (d) => readdirSync(d, { withFileTypes: true }).forEach((e) => {
+        const f = join(d, e.name);
+        if (e.isDirectory()) walk(f);
+        else if (/\.(html|css|js)$/.test(e.name)) texts.push(readFileSync(f, 'utf8'));
+      });
+      walk(out);
+      const all = texts.join('\n');
+      for (const sub of ['photos', 'fonts']) {
+        const d = join(out, sub);
+        if (!existsSync(d)) continue;
+        for (const f of readdirSync(d)) if (statSync(join(d, f)).isFile() && !all.includes(`${sub}/${f}`)) rmSync(join(d, f));
+      }
     },
   };
 }
@@ -113,14 +240,17 @@ function stripProvenanceSidecars() {
    (/karelia-guest-house-website/), локально и на своём домене — в корне.
    Картинки, шрифты и стили Vite переписывает сам; ссылки между страницами
    (href="/…") дописываем здесь. */
-const base = process.env.SITE_BASE || '/';
+/* Сборка для просмотра без сервера (npm run build:local → папка dist-local):
+   страницы открываются двойным щелчком, все пути относительные. На хостинг не выкладывается. */
+const LOCAL = process.env.LOCAL_FILES === '1';
+const base = LOCAL ? './' : process.env.SITE_BASE || '/';
 function prefixPageLinks() {
   return {
     name: 'prefix-page-links',
     transformIndexHtml: {
       order: 'post',
       handler(html) {
-        if (base === '/') return html;
+        if (base === '/' || LOCAL) return html;
         return html.replace(/href="\/(?!\/)/g, (m, off) =>
           html.startsWith(base, off + 6) ? m : `href="${base}`);
       },
@@ -128,12 +258,38 @@ function prefixPageLinks() {
   };
 }
 
+/* Только для dist-local: ссылки между страницами — относительные и с index.html на конце
+   (с диска браузер не открывает папку как страницу), скрипт — обычный, не модуль:
+   модули и crossorigin браузер с диска не загружает. */
+function localFileLinks() {
+  return {
+    name: 'local-file-links',
+    apply: () => LOCAL,
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        const depth = relative(__dirname, ctx.filename).split('/').length - 1;
+        const up = '../'.repeat(depth);
+        return html
+          .replace(/href="\/(?!\/)([^"#]*?)(#[^"]*)?"/g, (m, path, hash = '') => {
+            if (/\.[a-z0-9]+$/i.test(path)) return `href="${up}${path}${hash}"`;
+            return `href="${up}${path}${path && !path.endsWith('/') ? '/' : ''}index.html${hash}"`;
+          })
+          .replace(/<script type="module" crossorigin src=/g, '<script defer src=')
+          .replace(/ crossorigin(?=[ >])/g, '');
+      },
+    },
+  };
+}
+
 export default defineConfig({
   base,
-  plugins: [partials(), prefixPageLinks(), stripProvenanceSidecars()],
+  plugins: [partials(), seo(), prefixPageLinks(), localFileLinks(), stripHtmlComments(), sitemapAndRobots(), stripProvenanceSidecars(), pruneUnusedPublicFiles()],
   server: { port: 5188, host: '127.0.0.1' },
   build: {
-    assetsInlineLimit: 2048,
+    outDir: LOCAL ? 'dist-local' : 'dist',
+    // С диска CSS-маски из отдельных файлов не грузятся — в dist-local встраиваем их в стили.
+    assetsInlineLimit: LOCAL ? 100 * 1024 : 2048,
     rollupOptions: {
       input: pages,
     },

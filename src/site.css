@@ -160,6 +160,9 @@ img { max-width: 100%; height: auto; display: block; }
   padding: 1.1rem 0;
 }
 .brand { display: flex; align-items: center; gap: .7rem; text-decoration: none; color: #fff; }
+/* Над фото первого экрана (светлое небо, белые стены) логотипу и меню нужна мягкая тень. */
+.top:not(.top--solid) .brand, .top:not(.top--solid) .nav__link { text-shadow: 0 1px 12px rgba(20,26,18,.6), 0 1px 2px rgba(20,26,18,.4); }
+.top:not(.top--solid) .brand__mark svg { filter: drop-shadow(0 1px 6px rgba(20,26,18,.55)); }
 .brand__mark svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 1.5; }
 .brand__txt { display: block; line-height: 1.12; }
 .brand__txt b { display: block; font-family: var(--f-h); font-weight: 400; font-size: 20px; }
@@ -543,6 +546,8 @@ img { max-width: 100%; height: auto; display: block; }
 .gal__grid img[src*="house3-stove"] { object-position: 12% 50%; }
 .gal__grid img[src*="banya-oblivnoe"] { object-position: 50% 12%; }
 body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
+/* Подъезд к поляне: на узких экранах слева белая стена дома — сдвигаем кадр к дороге и лесу. */
+body[data-page="kak-dobratsya"] .phero__bg { object-position: 72% 50%; }
 .phero__veil {
   position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(180deg, rgba(20,26,18,.6) 0%, rgba(20,26,18,.12) 38%, rgba(20,26,18,.72) 100%);
@@ -552,6 +557,9 @@ body[data-page="geokupol"] .phero__bg { object-position: 50% 22%; }
   .phero__veil { background: linear-gradient(180deg, rgba(20,26,18,.72) 0%, rgba(20,26,18,.3) 30%, rgba(20,26,18,.2) 50%, rgba(20,26,18,.78) 100%); }
 }
 .phero__in { align-self: flex-end; padding: 7rem 0 calc(var(--fade) + .4rem); }
+/* Страница 404: короткий первый экран и ряд ссылок на основные разделы. */
+.phero--404 { --fade-to: var(--ivory); min-height: clamp(360px, 52vh, 520px); }
+.notfound { padding: clamp(1.4rem, 3vw, 2.4rem) 0 var(--band); }
 /* Крошки лежат поверх фото — своя тёмная подложка держит контраст на светлых стенах. */
 .crumbs {
   display: inline-flex; flex-wrap: wrap; align-items: center; gap: .1rem .35rem;
