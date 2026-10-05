@@ -171,8 +171,9 @@ const calmMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const heroSection = document.querySelector('.hero, .phero');
 if (heroSection && !calmMotion) {
-  const layers = [...heroSection.querySelectorAll('.hero__bg, .phero__bg')];
+  const layers = [...heroSection.querySelectorAll('.hero__bg, .hero__video, .phero__bg')];
   const inner = heroSection.querySelector('.hero__in, .phero__in');
+  const narrowHero = matchMedia('(max-width: 720px)');
   let queued = false;
   const paint = () => {
     queued = false;
@@ -183,7 +184,8 @@ if (heroSection && !calmMotion) {
     layers.forEach((el) => { el.style.transform = `translate3d(0, ${y * .42}px, 0) scale(${1 + p * .06})`; });
     if (inner) {
       inner.style.transform = `translate3d(0, ${y * .2}px, 0)`;
-      inner.style.opacity = String(Math.max(0, 1 - p * 1.1));
+      // На телефоне первый экран выше окна: до кнопок фона докручивают — текст там не растворяем.
+      inner.style.opacity = narrowHero.matches ? '' : String(Math.max(0, 1 - p * 1.1));
     }
   };
   const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(paint); } };
@@ -221,4 +223,81 @@ if (!calmMotion && 'IntersectionObserver' in window) {
     });
   }, { rootMargin: '0px 0px -8% 0px', threshold: .12 });
   all.forEach((el) => io.observe(el));
+}
+
+/* --- фон первого экрана главной: лето, зима или видео ------------------
+   Кнопки .season. Стартовый фон — по месяцу (см. public/hero-season.js); выбор
+   посетителя запоминается в браузере; ссылка с готовым фоном — /?bg=winter или /?bg=video. Видео не запускаем тем, кто просит меньше
+   движения или экономит трафик, — им остаётся заставка ролика. */
+const season = document.querySelector('.season');
+const heroBg = document.querySelector('.hero__bg');
+const heroVideo = document.querySelector('.hero__video');
+if (season && heroBg) {
+  const base = import.meta.env.BASE_URL;
+  const variants = {
+    summer: { name: 'hero-summer', w: 2000, alt: 'Большой гостевой дом на летней поляне, рядом геокупол и лес' },
+    winter: { name: 'hero-winter-3', w: 1536, alt: 'Гостевые дома на заснеженной поляне среди леса, на крыльце горят гирлянды' },
+    video: { video: true, alt: 'Поляна с гостевыми домами летом и зимой' },
+  };
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches || (navigator.connection && navigator.connection.saveData);
+  const poster = `${base}video/hero-loop-poster.webp`;
+  const files = (v) => (v.video
+    ? { srcset: '', src: poster }
+    : { srcset: `${base}photos/${v.name}@sm.webp 900w, ${base}photos/${v.name}@md.webp 1400w, ${base}photos/${v.name}.webp ${v.w}w`, src: `${base}photos/${v.name}.webp` });
+  // Фото загружаем заранее и подставляем, когда оно готово: иначе на медленной связи
+  // кнопка уже переключилась, а на экране ещё несколько секунд прежний фон.
+  const loaded = new Map();
+  const preload = (key) => {
+    if (!loaded.has(key)) {
+      const { srcset, src } = files(variants[key]);
+      const img = new Image();
+      img.sizes = heroBg.sizes || '100vw';
+      if (srcset) img.srcset = srcset;
+      img.src = src;
+      loaded.set(key, (img.decode ? img.decode() : Promise.resolve()).catch(() => {}));
+    }
+    return loaded.get(key);
+  };
+  let pending = 0;
+  const apply = async (key, remember = true) => {
+    const v = variants[key];
+    if (!v) return;
+    const mine = ++pending;
+    season.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.bg === key)));
+    season.setAttribute('aria-busy', 'true');
+    await preload(key);
+    if (mine !== pending) return; // пока грузилось, выбрали другой фон
+    season.removeAttribute('aria-busy');
+    const { srcset, src } = files(v);
+    if (srcset) heroBg.srcset = srcset; else heroBg.removeAttribute('srcset');
+    heroBg.src = src;
+    heroBg.alt = v.alt;
+    if (heroVideo) {
+      if (v.video && !calm) {
+        if (!heroVideo.firstChild) {
+          heroVideo.poster = poster;
+          heroVideo.innerHTML = `<source src="${base}video/hero-loop.webm" type="video/webm"><source src="${base}video/hero-loop.mp4" type="video/mp4">`;
+          heroVideo.preload = 'auto';
+          heroVideo.load();
+        }
+        heroVideo.hidden = false;
+        heroVideo.play().catch(() => {});
+      } else {
+        heroVideo.pause();
+        heroVideo.hidden = true;
+      }
+    }
+    if (remember) { try { localStorage.setItem('hero-bg', key); } catch (e) { /* без хранилища просто не запоминаем */ } }
+  };
+  // Стартовый фон уже выбрал /hero-season.js (по месяцу или сохранённому выбору) — отмечаем кнопку,
+  // а ролик запускаем здесь: фото и заставку скрипт в разметке подставил сам.
+  const start = document.documentElement.getAttribute('data-hero-bg');
+  if (variants[start]) {
+    loaded.set(start, Promise.resolve());
+    season.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.bg === start)));
+    if (start === 'video') apply('video', false);
+  }
+  season.addEventListener('click', (e) => { const b = e.target.closest('button[data-bg]'); if (b) apply(b.dataset.bg); });
+  // Начинаем загрузку уже при наведении или касании — к нажатию фото часто готово.
+  ['pointerover', 'focusin'].forEach((type) => season.addEventListener(type, (e) => { const b = e.target.closest('button[data-bg]'); if (b) preload(b.dataset.bg); }));
 }

@@ -230,7 +230,11 @@ function pruneUnusedPublicFiles() {
       for (const sub of ['photos', 'fonts']) {
         const d = join(out, sub);
         if (!existsSync(d)) continue;
-        for (const f of readdirSync(d)) if (statSync(join(d, f)).isFile() && !all.includes(`${sub}/${f}`)) rmSync(join(d, f));
+        for (const f of readdirSync(d)) {
+          // Скрипт собирает имена фото из основы и суффикса (hero-winter-2 → @sm/@md), поэтому ищем и основу.
+          const stem = f.replace(/(@\w+)?\.\w+$/, '');
+          if (statSync(join(d, f)).isFile() && !all.includes(`${sub}/${f}`) && !all.includes(`'${stem}'`) && !all.includes(`"${stem}"`)) rmSync(join(d, f));
+        }
       }
     },
   };

@@ -15,7 +15,11 @@
 
 <!-- ============================ ГЕРОЙ ============================ -->
 <section class="hero" id="top">
-  <img class="hero__bg" src="/photos/hero-summer.webp" srcset="/photos/hero-summer@sm.webp 900w, /photos/hero-summer@md.webp 1400w, /photos/hero-summer.webp 2000w" sizes="100vw" alt="Большой гостевой дом на летней поляне, рядом геокупол и лес" fetchpriority="high" width="2000" height="1429">
+  <!-- Фото подставляет /hero-season.js по месяцу или выбору посетителя; без скрипта — летнее (noscript). -->
+  <img class="hero__bg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" sizes="100vw" alt="Большой гостевой дом на летней поляне, рядом геокупол и лес" fetchpriority="high" width="2000" height="1429">
+  <script src="/hero-season.js"></script>
+  <noscript><img class="hero__bg" src="/photos/hero-summer.webp" srcset="/photos/hero-summer@sm.webp 900w, /photos/hero-summer@md.webp 1400w, /photos/hero-summer.webp 2000w" sizes="100vw" alt="Большой гостевой дом на летней поляне, рядом геокупол и лес" width="2000" height="1429"></noscript>
+  <video class="hero__video" muted loop playsinline preload="none" aria-hidden="true" hidden></video>
   <div class="hero__veil" aria-hidden="true"></div>
 
   <div class="shell hero__in">
@@ -39,6 +43,13 @@
         </span>
         <span class="hero__addr">Республика Карелия,<br>Питкярантский район, д. Кителя</span>
       </p>
+
+      <!-- Фон первого экрана: летнее фото, зимнее или ролик «год на поляне». Выбор запоминается. -->
+      <div class="season" role="group" aria-label="Фон первого экрана">
+        <button type="button" data-bg="summer" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>Лето</button>
+        <button type="button" data-bg="winter" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19M3.8 7.2l16.4 9.6M3.8 16.8l16.4-9.6M9.3 4l2.7 2.2L14.7 4M9.3 20l2.7-2.2 2.7 2.2M4.3 10.4l3.3.6-1.1 3.2M19.7 13.6l-3.3-.6 1.1-3.2M6.5 9.8l1.1 3.2-3.3.6M17.5 14.2l-1.1-3.2 3.3-.6"/></svg>Зима</button>
+        <button type="button" data-bg="video" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.6v6.8l5.6-3.4Z"/></svg>Видео</button>
+      </div>
     </div>
   </div>
 </section>

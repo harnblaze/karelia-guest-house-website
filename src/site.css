@@ -312,8 +312,34 @@ img { max-width: 100%; height: auto; display: block; }
   display: flex; align-items: center; gap: .8rem;
   margin: 0; text-align: left; font-size: 14.5px; line-height: 1.45; opacity: .92;
 }
+.hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.hero__video[hidden] { display: none; }
 .hero__pin { display: flex; flex: none; }
 .hero__pin svg { width: 40px; height: 40px; margin: -2px -4px; fill: none; stroke: currentColor; stroke-width: .95; }
+
+/* Переключатель фона первого экрана: стеклянная «пилюля» в правой колонке, в тон шапке.
+   Выбранный вариант — светлая заливка, как у главной кнопки; рамка — золотом сайта. */
+.season {
+  margin-top: -1.2rem;
+  display: inline-flex; gap: .2rem; padding: .25rem; border-radius: 100px;
+  background: rgba(20,26,18,.38); border: 1px solid rgba(220,195,146,.45);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: 0 10px 30px -18px rgba(0,0,0,.6);
+}
+.season button {
+  display: inline-flex; align-items: center; gap: .4rem; min-height: 36px; padding: 0 .9rem;
+  border: 0; border-radius: 100px; cursor: pointer;
+  font: 400 14px/1 var(--f-b); letter-spacing: .02em; color: rgba(255,255,255,.88); background: transparent;
+  transition: background-color .25s cubic-bezier(.16,1,.3,1), color .25s cubic-bezier(.16,1,.3,1);
+}
+.season button:hover { color: #fff; background: rgba(255,255,255,.12); }
+.season button[aria-pressed="true"] { background: var(--ivory); color: var(--ink); }
+.season svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.season button[aria-pressed="true"] svg { stroke: var(--gold-dk); }
+/* Пока выбранный фон загружается, кнопка мягко пульсирует. */
+.season[aria-busy="true"] button[aria-pressed="true"] { animation: season-busy 1s ease-in-out infinite alternate; }
+@keyframes season-busy { to { opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .season button { transition: none; } .season[aria-busy="true"] button[aria-pressed="true"] { animation: none; } }
 
 /* --- четыре опоры ------------------------------------------------------ */
 .pillars { background: var(--ivory-2) var(--grain); }
@@ -924,6 +950,9 @@ main:has(> .region:last-child) + .cta {
   .hero__eyebrow::before { display: none; }
   .hero__script { display: none; }
   .hero__side { flex-basis: 100%; margin-left: 0; align-items: flex-start; }
+  /* Кнопки фона — последние в первом экране: приподнимаем над светлым переходом и делаем плотнее. */
+  .hero__in { padding-bottom: calc(var(--fade) + 1.4rem); }
+  .season { margin-top: -1rem; background: rgba(20,26,18,.58); }
   .foot__contacts { margin-left: 0; }
   /* Горизонтальные ленты вместо длинных колонок на телефоне. */
   .cards, .others .cards, .cards--three, .revs__grid, .nature__grid, .spots, .stay__grid {
